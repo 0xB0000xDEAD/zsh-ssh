@@ -162,7 +162,7 @@ fzf-complete-ssh() {
 
     if [ -n "$result" ]; then
       _set-lbuffer $result true
-      zle accept-line
+      # zle accept-line # this cause to execute without wait for ENTER
     fi
 
     zle reset-prompt
