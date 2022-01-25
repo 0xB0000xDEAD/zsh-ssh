@@ -122,6 +122,21 @@ _set-lbuffer() {
   LBUFFER="$connect_cmd"
 }
 
+_custom_command_matching() {
+    local cmd=$1 extra_commands_array=()
+
+    while IFS= read -r c; do
+        extra_commands_array+=("$c")
+    done <$ZSH_SSH_EXTRACOMMAND_PATH
+
+    for c in ${extra_commands_array[@]}; do
+        if [[ "$cmd" == "$c" ]] && [[ "$c" =~ "^#*" ]]; then
+            return 1
+        fi
+    done
+    return 0
+}
+
 fzf-complete-ssh() {
   local tokens cmd result selected_host
   setopt localoptions noshwordsplit noksh_arrays noposixbuiltins
@@ -129,9 +144,12 @@ fzf-complete-ssh() {
   tokens=(${(z)LBUFFER})
   cmd=${tokens[1]}
 
+  _custom_command_matching "$cmd"
+  _match_custom=$?
+
   if [[ "$LBUFFER" =~ "^ *ssh$" ]]; then
     zle ${fzf_ssh_default_completion:-expand-or-complete}
-  elif [[ "$cmd" == "ssh" ]] || [[ "$cmd" == "mosh" ]] || [[ "$cmd" == "sshs" ]]; then
+  elif [[ "$cmd" == "ssh" ]] || [[ "$_match_custom" -eq 1 ]]; then
     result=$(_ssh-host-list ${tokens[2, -1]})
 
     if [ -z "$result" ]; then
